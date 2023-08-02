@@ -1,2 +1,2 @@
-# platform-k8s
+# Silimate Platform K8s
 Kubernetes configuration for deployments
