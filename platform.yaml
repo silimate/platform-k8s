@@ -1,3 +1,19 @@
+# Persistent volume for postgres
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: postgres-pv-volume
+  labels:
+    type: local
+    app: postgres
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/data"
+---
 # Persistent volume claim for postgres
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -6,7 +22,6 @@ metadata:
   labels:
     app: postgres
 spec:
-  storageClassName: manual
   accessModes:
     - ReadWriteMany
   resources:
@@ -53,6 +68,7 @@ spec:
               value: postgres
             - name: POSTGRES_USER
               value: postgres
+            # TODO: THIS SHOULD BE A SECRET
             - name: POSTGRES_PASSWORD
               value: postgres
           volumeMounts:
