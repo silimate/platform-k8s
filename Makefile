@@ -1,8 +1,9 @@
+# REFERENCE
 pg-start:
-	kubectl apply -f pg-configmap.yaml
-	kubectl apply -f pg-storage.yaml
-	kubectl apply -f pg-deployment.yaml
-	kubectl apply -f pg-service.yaml
+	kubectl apply -f reference/pg-configmap.yaml
+	kubectl apply -f reference/pg-storage.yaml
+	kubectl apply -f reference/pg-deployment.yaml
+	kubectl apply -f reference/pg-service.yaml
 
 pg-stop:
 	kubectl delete service postgres 
@@ -12,11 +13,12 @@ pg-stop:
 	kubectl delete persistentvolume postgres-pv-volume
 
 postgres-start:
-	kubectl apply -f postgres.yaml
+	kubectl apply -f reference/postgres.yaml
 
 postgres-stop:
-	kubectl delete -f postgres.yaml
+	kubectl delete -f reference/postgres.yaml
 
+# PLATFORM
 platform-start:
 	kubectl apply -f platform.yaml
 
