@@ -1,0 +1,82 @@
+# Persistent volume claim for postgres
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: postgres-pv-claim
+  labels:
+    app: postgres
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+---
+# Deployment of the containers as a pod
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: silimate-platform-k8s
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: frontend
+          image: silimate-platform-frontend
+          imagePullPolicy: Never
+        - name: nginx
+          image: silimate-platform-nginx
+          imagePullPolicy: Never
+        - name: dashboard
+          image: silimate-dashboard
+          imagePullPolicy: Never
+        - name: backend
+          image: silimate-platform-backend
+          imagePullPolicy: Never
+        - name: flow
+          image: silimate-flow
+          imagePullPolicy: Never
+        - name: postgres
+          image: postgres:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_DB
+              value: postgres
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: postgres
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgresdb
+      volumes:
+        - name: postgresdb
+          persistentVolumeClaim:
+            claimName: postgres-pv-claim
+        - name: workdir
+          emptyDir: {}
+      dnsPolicy: Default
+---
+# Exposure of the service
+apiVersion: v1
+kind: Service
+metadata:
+  name: silimate-platform-entrypoint
+  namespace: default
+spec:
+  type: NodePort
+  selector:
+    app: web
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30001
