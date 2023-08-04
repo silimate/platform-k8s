@@ -45,6 +45,12 @@ spec:
         app: web
     spec:
       containers:
+        - name: postgres
+          image: silimate-platform-db
+          imagePullPolicy: Never
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgresdb
         - name: frontend
           image: silimate-platform-frontend
           imagePullPolicy: Never
@@ -60,20 +66,7 @@ spec:
         - name: flow
           image: silimate-flow
           imagePullPolicy: Never
-        - name: postgres
-          image: postgres:latest
-          imagePullPolicy: IfNotPresent
-          env:
-            - name: POSTGRES_DB
-              value: postgres
-            - name: POSTGRES_USER
-              value: postgres
-            # TODO: THIS SHOULD BE A SECRET
-            - name: POSTGRES_PASSWORD
-              value: postgres
-          volumeMounts:
-            - mountPath: /var/lib/postgresql/data
-              name: postgresdb
+          command: ["sh", "-c", "airflow db init && airflow webserver"]
       volumes:
         - name: postgresdb
           persistentVolumeClaim:
