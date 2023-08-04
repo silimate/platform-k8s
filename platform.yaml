@@ -1,38 +1,8 @@
-# Persistent volume for postgres
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: postgres-pv-volume
-  labels:
-    type: local
-    app: postgres
-spec:
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/mnt/data"
----
-# Persistent volume claim for postgres
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: postgres-pv-claim
-  labels:
-    app: postgres
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 5Gi
----
 # Deployment of the containers as a pod
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: silimate-platform-k8s
+  name: silimate-platform-k8s-deployment
   namespace: default
 spec:
   replicas: 1
