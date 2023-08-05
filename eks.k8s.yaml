@@ -1,18 +1,3 @@
-# # Persistent volume claim for postgres
-# apiVersion: v1
-# kind: PersistentVolumeClaim
-# metadata:
-#   name: postgres-pv-claim
-#   labels:
-#     app: postgres
-# spec:
-#   accessModes:
-#     - ReadWriteOnce
-#   storageClassName: gp2
-#   resources:
-#     requests:
-#       storage: 5Gi
-# ---
 # Deployment of the containers as a pod
 apiVersion: apps/v1
 kind: Deployment
@@ -33,9 +18,6 @@ spec:
         - name: postgres
           image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-db:latest
           imagePullPolicy: Always
-          # volumeMounts:
-          #   - mountPath: /var/lib/postgresql/data
-          #     name: postgresdb
         - name: frontend
           image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-frontend:latest
           imagePullPolicy: Always
@@ -53,14 +35,11 @@ spec:
           imagePullPolicy: Always
           command: ["sh", "-c", "airflow db init && airflow webserver"]
       volumes:
-        # - name: postgresdb
-        #   persistentVolumeClaim:
-        #     claimName: postgres-pv-claim
         - name: workdir
           emptyDir: {}
       dnsPolicy: Default
 ---
-# Load balancer for the service
+# Load balancer to expose the service
 apiVersion: v1
 kind: Service
 metadata:
@@ -74,24 +53,14 @@ spec:
     - port: 80
       targetPort: 80
 ---
-# Cluster configuration to make sure that root can access in cloud
-apiVersion: eksctl.io/v1alpha5
-kind: ClusterConfig
+# Config map to give AWS root user access to the cluster
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: cluster-with-iamidentitymappings
-  region: us-west-1
-iamIdentityMappings:
-  - arn: arn:aws:iam::596912105783:role/eksctl-silimate-platform-k8s-node-NodeInstanceRole-89GBJNWWHT9T
-    groups:
+  name: aws-auth
+  namespace: kube-system
+data:
+  mapUsers: |
+    - groups:
       - system:masters
-    username: admin
-    noDuplicateARNs: true
-  - arn: arn:aws:iam::596912105783:role/eksctl-silimate-platform-k8s-node-NodeInstanceRole-O6QY7UVFY6NJ
-    groups:
-      - system:masters
-    username: admin
-    noDuplicateARNs: true
-  - arn: arn:aws:iam::596912105783:root
-    groups:
-      - system:masters
-  - account: "596912105783"
+      userarn: arn:aws:iam::596912105783:root
