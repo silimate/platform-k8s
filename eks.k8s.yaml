@@ -43,7 +43,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: silimate-platform-entrypoint
+  name: silimate-platform-service
   namespace: default
 spec:
   type: LoadBalancer
@@ -52,15 +52,3 @@ spec:
   ports:
     - port: 80
       targetPort: 80
----
-# Config map to give AWS root user access to the cluster
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: aws-auth
-  namespace: kube-system
-data:
-  mapUsers: |
-    - groups:
-      - system:masters
-      userarn: arn:aws:iam::596912105783:root

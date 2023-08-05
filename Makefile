@@ -10,6 +10,8 @@ AWS_ROOT_ARN := arn:aws:iam::$(AWS_ACCOUNT_ID):root
 AWS_ADDON_NAME := efs-csi-driver
 
 # Utilities
+get-endpoint:
+	kubectl get svc -o wide
 get-pods:
 	kubectl get pods
 get-events:

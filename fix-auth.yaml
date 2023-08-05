@@ -1,0 +1,17 @@
+# Config map to give AWS root user access to the cluster
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-auth
+  namespace: kube-system
+data:
+  mapRoles: |
+    - rolearn: arn:aws:iam::596912105783:role/eksctl-silimate-platform-k8s-node-NodeInstanceRole-O6QY7UVFY6NJ
+      username: system:node:{{EC2PrivateDNSName}}
+      groups:
+        - system:bootstrappers
+        - system:nodes
+  mapUsers: |
+    - userarn: arn:aws:iam::596912105783:root
+      groups:
+        - system:masters
