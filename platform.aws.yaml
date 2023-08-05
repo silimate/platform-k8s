@@ -1,0 +1,97 @@
+# # Persistent volume claim for postgres
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: postgres-pv-claim
+#   labels:
+#     app: postgres
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   storageClassName: gp2
+#   resources:
+#     requests:
+#       storage: 5Gi
+# ---
+# Deployment of the containers as a pod
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: silimate-platform-k8s-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: postgres
+          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-db:latest
+          imagePullPolicy: Always
+          # volumeMounts:
+          #   - mountPath: /var/lib/postgresql/data
+          #     name: postgresdb
+        - name: frontend
+          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-frontend:latest
+          imagePullPolicy: Always
+        - name: nginx
+          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-nginx:latest
+          imagePullPolicy: Always
+        - name: dashboard
+          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-dashboard:latest
+          imagePullPolicy: Always
+        - name: backend
+          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-backend:latest
+          imagePullPolicy: Always
+        - name: flow
+          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-flow:latest
+          imagePullPolicy: Always
+          command: ["sh", "-c", "airflow db init && airflow webserver"]
+      volumes:
+        # - name: postgresdb
+        #   persistentVolumeClaim:
+        #     claimName: postgres-pv-claim
+        - name: workdir
+          emptyDir: {}
+      dnsPolicy: Default
+---
+# Load balancer for the service
+apiVersion: v1
+kind: Service
+metadata:
+  name: silimate-platform-entrypoint
+  namespace: default
+spec:
+  type: LoadBalancer
+  selector:
+    app: web
+  ports:
+    - port: 80
+      targetPort: 80
+---
+# Cluster configuration to make sure that root can access in cloud
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: cluster-with-iamidentitymappings
+  region: us-west-1
+iamIdentityMappings:
+  - arn: arn:aws:iam::596912105783:role/eksctl-silimate-platform-k8s-node-NodeInstanceRole-89GBJNWWHT9T
+    groups:
+      - system:masters
+    username: admin
+    noDuplicateARNs: true
+  - arn: arn:aws:iam::596912105783:role/eksctl-silimate-platform-k8s-node-NodeInstanceRole-O6QY7UVFY6NJ
+    groups:
+      - system:masters
+    username: admin
+    noDuplicateARNs: true
+  - arn: arn:aws:iam::596912105783:root
+    groups:
+      - system:masters
+  - account: "596912105783"
