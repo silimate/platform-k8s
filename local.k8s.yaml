@@ -71,7 +71,6 @@ spec:
         - name: postgresdb
           persistentVolumeClaim:
             claimName: postgres-pv-claim
-      dnsPolicy: Default
 ---
 # Load balancer for the service
 apiVersion: v1
