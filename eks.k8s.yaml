@@ -17,6 +17,7 @@ spec:
       initContainers:
         - name: backend-init
           image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-flow:latest
+          imagePullPolicy: Always
           volumeMounts:
             - name: flows
               mountPath: /app/flows

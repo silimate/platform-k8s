@@ -44,6 +44,14 @@ spec:
       labels:
         app: web
     spec:
+      initContainers:
+      - name: backend-init
+        image: silimate-flow
+        imagePullPolicy: Never
+        volumeMounts:
+          - name: flows
+            mountPath: /app/flows
+        command: [mv, /app/flowrepo/*, /app/flows/]
       containers:
         - name: postgres
           image: silimate-platform-db
@@ -63,10 +71,16 @@ spec:
         - name: backend
           image: silimate-platform-backend
           imagePullPolicy: Never
+          volumeMounts:
+            - name: flows
+              mountPath: /app/flows
         - name: flow
           image: silimate-flow
           imagePullPolicy: Never
           command: ["sh", "-c", "airflow db init && airflow webserver"]
+          volumeMounts:
+            - name: flows
+              mountPath: /app/flows
       volumes:
         - name: postgresdb
           persistentVolumeClaim:
