@@ -71,8 +71,6 @@ spec:
         - name: postgresdb
           persistentVolumeClaim:
             claimName: postgres-pv-claim
-        - name: workdir
-          emptyDir: {}
       dnsPolicy: Default
 ---
 # Load balancer for the service

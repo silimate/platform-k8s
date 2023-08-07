@@ -34,9 +34,6 @@ spec:
           image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-flow:latest
           imagePullPolicy: Always
           command: ["sh", "-c", "airflow db init && airflow webserver"]
-      volumes:
-        - name: workdir
-          emptyDir: {}
       dnsPolicy: Default
 ---
 # Load balancer to expose the service
