@@ -5,6 +5,7 @@ Kubernetes configuration/provisioning for deployments, including Postgres databa
 Go to AWS and do the following:
 - Spin up RDS Postgres instance
   - Type: Aurora (PostgreSQL Compatible)
+  - Version: latest
   - Name: `silimate-platform-db`
   - Username: `silimate`
   - Password: auto-generated
