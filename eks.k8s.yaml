@@ -15,13 +15,15 @@ spec:
         app: web
     spec:
       initContainers:
-        - name: backend-init
+        - name: flow-init
           image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-flow:latest
           imagePullPolicy: Always
           volumeMounts:
             - name: flows
               mountPath: /app/flows
-          command: [mv, /app/flowrepo/*, /app/flows/]
+            - name: steps
+              mountPath: /app/steps
+          command: [sh, -c, cp -rf /app/flowrepo/* /app/flows/ && cp -rf /app/steprepo/* /app/steps/]
       containers:
         - name: postgres
           image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-db:latest
@@ -41,15 +43,21 @@ spec:
           volumeMounts:
             - name: flows
               mountPath: /app/flows
+            - name: steps
+              mountPath: /app/steps
         - name: flow
           image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-flow:latest
           imagePullPolicy: Always
-          command: ["sh", "-c", "airflow db init && airflow webserver"]
+          args: [standalone]
           volumeMounts:
             - name: flows
               mountPath: /app/flows
+            - name: steps
+              mountPath: /app/steps
       volumes:
         - name: flows
+          emptyDir: {}
+        - name: steps
           emptyDir: {}
 ---
 # Load balancer to expose the service

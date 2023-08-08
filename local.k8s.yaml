@@ -45,13 +45,15 @@ spec:
         app: web
     spec:
       initContainers:
-      - name: backend-init
+      - name: flow-init
         image: silimate-flow
         imagePullPolicy: Never
         volumeMounts:
           - name: flows
             mountPath: /app/flows
-        command: [mv, /app/flowrepo/*, /app/flows/]
+          - name: steps
+            mountPath: /app/steps
+        command: [sh, -c, cp -rf /app/flowrepo/* /app/flows/ && cp -rf /app/steprepo/* /app/steps/]
       containers:
         - name: postgres
           image: silimate-platform-db
@@ -74,17 +76,25 @@ spec:
           volumeMounts:
             - name: flows
               mountPath: /app/flows
+            - name: steps
+              mountPath: /app/steps
         - name: flow
           image: silimate-flow
           imagePullPolicy: Never
-          command: ["sh", "-c", "airflow db init && airflow webserver"]
+          args: [standalone]
           volumeMounts:
             - name: flows
               mountPath: /app/flows
+            - name: steps
+              mountPath: /app/steps
       volumes:
         - name: postgresdb
           persistentVolumeClaim:
             claimName: postgres-pv-claim
+        - name: flows
+          emptyDir: {}
+        - name: steps
+          emptyDir: {}
 ---
 # Load balancer for the service
 apiVersion: v1
