@@ -5,7 +5,7 @@ K8S_CONTEXT := eks
 AWS_ACCOUNT_ID := 596912105783
 AWS_REGION := us-west-1
 AWS_ECR_REPO := $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
-AWS_CLUSTER_NAME := silimate-platform-k8s
+AWS_CLUSTER_NAME := silimate-platform-k8s-dev
 AWS_ROOT_ARN := arn:aws:iam::$(AWS_ACCOUNT_ID):root
 AWS_ADDON_NAME := efs-csi-driver
 
@@ -33,20 +33,12 @@ create-cluster:
 delete-cluster:
 	eksctl delete cluster --name $(AWS_CLUSTER_NAME) --region $(AWS_REGION)
 
-eks-setup-efs-addon:
-	eksctl create iamserviceaccount \
-    --name efs-csi-controller-sa \
-    --namespace kube-system \
-    --cluster $(AWS_CLUSTER_NAME) \
-    --role-name AmazonEKS_EFS_CSI_DriverRole \
-    --role-only \
-    --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy \
-    --approve
-	TRUST_POLICY=$$(aws iam get-role --role-name AmazonEKS_EFS_CSI_DriverRole --query 'Role.AssumeRolePolicyDocument' | sed -e 's/efs-csi-controller-sa/efs-csi-*/' -e 's/StringEquals/StringLike/') && \
-	aws iam update-assume-role-policy --role-name AmazonEKS_EFS_CSI_DriverRole --policy-document "$$TRUST_POLICY"
-eks-create-addon:
-	aws eks create-addon --cluster-name $(AWS_CLUSTER_NAME) --region $(AWS_REGION) --addon-name $(ADDON_NAME) --service-account-role-arn arn:aws:iam::$(AWS_ACCOUNT_ID):role/AmazonEKS_EBS_CSI_DriverRole
-eks-delete-addon:
-	aws eks delete-addon --cluster-name $(AWS_CLUSTER_NAME) --region $(AWS_REGION) --addon-name $(AWS_ADDON_NAME)
-eks-check-addons:
-	eksctl get addon --cluster $(AWS_CLUSTER_NAME) --region $(AWS_REGION)
+# EKS connect to RDS
+install-rds:
+	aws ecr-public get-login-password --region us-east-1 | helm registry login --username AWS --password-stdin public.ecr.aws; \
+	helm install --create-namespace -n ack-system oci://public.ecr.aws/aws-controllers-k8s/rds-chart --generate-name --set=aws.region=us-east-1
+install-vpc:
+	export EKS_VPC_ID=`aws eks describe-cluster --name="${AWS_CLUSTER_NAME}" --query "cluster.resourcesVpcConfig.vpcId" --output text`; \
+	export EKS_SUBNET_IDS=`aws ec2 describe-subnets --filters "Name=vpc-id,Values=$$EKS_VPC_ID" --query 'Subnets[*].SubnetId' --output text`; \
+	echo $$EKS_SUBNET_IDS; \
+	envsubst < db-subnet-groups.tmpl.yaml > db-subnet-groups.yaml

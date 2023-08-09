@@ -25,9 +25,6 @@ spec:
               mountPath: /app/steps
           command: [sh, -c, cp -rf /app/flowrepo/* /app/flows/ && cp -rf /app/steprepo/* /app/steps/]
       containers:
-        - name: postgres
-          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-db:latest
-          imagePullPolicy: Always
         - name: frontend
           image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-frontend:latest
           imagePullPolicy: Always

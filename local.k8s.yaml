@@ -45,15 +45,15 @@ spec:
         app: web
     spec:
       initContainers:
-      - name: flow-init
-        image: silimate-flow
-        imagePullPolicy: Never
-        volumeMounts:
-          - name: flows
-            mountPath: /app/flows
-          - name: steps
-            mountPath: /app/steps
-        command: [sh, -c, cp -rf /app/flowrepo/* /app/flows/ && cp -rf /app/steprepo/* /app/steps/]
+        - name: flow-init
+          image: silimate-flow
+          imagePullPolicy: Never
+          volumeMounts:
+            - name: flows
+              mountPath: /app/flows
+            - name: steps
+              mountPath: /app/steps
+          command: [sh, -c, cp -rf /app/flowrepo/* /app/flows/ && cp -rf /app/steprepo/* /app/steps/]
       containers:
         - name: postgres
           image: silimate-platform-db
@@ -96,7 +96,7 @@ spec:
         - name: steps
           emptyDir: {}
 ---
-# Load balancer for the service
+# Load balancer to expose the service
 apiVersion: v1
 kind: Service
 metadata:
