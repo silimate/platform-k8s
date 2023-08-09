@@ -20,10 +20,14 @@ watch:
 	watch "make get-events | tail -n 15"
 
 # Start/stop k8s services
-start:
-	kubectl apply -f $(K8S_CONTEXT).k8s.yaml
-stop:
-	kubectl delete -f $(K8S_CONTEXT).k8s.yaml
+start-local:
+	kubectl apply -f k8s.yaml
+	kubectl apply -f postgres.yaml
+start-eks-dryrun:
+	sed -E 's/image: (.*)/image: $(AWS_ECR_REPO)\/\1:latest/;s/imagePullPolicy: Never/imagePullPolicy: Always/' k8s.yaml > eks.k8s.yaml
+start-eks: start-eks-dryrun
+	kubectl apply -f eks.k8s.yaml
+	kubectl apply -f root-auth.yaml
 redeploy:
 	kubectl rollout restart deployment/silimate-platform-k8s-deployment
 
@@ -34,11 +38,14 @@ delete-cluster:
 	eksctl delete cluster --name $(AWS_CLUSTER_NAME) --region $(AWS_REGION)
 
 # EKS connect to RDS
-install-rds:
+install-rds-chart:
 	aws ecr-public get-login-password --region us-east-1 | helm registry login --username AWS --password-stdin public.ecr.aws; \
 	helm install --create-namespace -n ack-system oci://public.ecr.aws/aws-controllers-k8s/rds-chart --generate-name --set=aws.region=us-east-1
-install-vpc:
+deploy-db:
 	export EKS_VPC_ID=`aws eks describe-cluster --name="${AWS_CLUSTER_NAME}" --query "cluster.resourcesVpcConfig.vpcId" --output text`; \
 	export EKS_SUBNET_IDS=`aws ec2 describe-subnets --filters "Name=vpc-id,Values=$$EKS_VPC_ID" --query 'Subnets[*].SubnetId' --output text`; \
-	echo $$EKS_SUBNET_IDS; \
-	envsubst < db-subnet-groups.tmpl.yaml > db-subnet-groups.yaml
+	export EKS_CIDR_RANGE=`aws ec2 describe-vpcs --vpc-ids $$EKS_VPC_ID --query "Vpcs[].CidrBlock" --output text`; \
+	export RDS_SECURITY_GROUP_ID=`aws ec2 create-security-group --description "RDS ingress security group" --group-name silimate-platform-subnet-group --vpc-id "$$EKS_VPC_ID" --output text`; \
+	aws ec2 authorize-security-group-ingress --group-id "$$RDS_SECURITY_GROUP_ID" --protocol tcp --port 5432 --cidr "$$EKS_CIDR_RANGE"; \
+	envsubst < rds.tmpl.yaml > rds.yaml; \
+	kubectl apply -f rds.yaml

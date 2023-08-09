@@ -16,8 +16,8 @@ spec:
     spec:
       initContainers:
         - name: flow-init
-          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-flow:latest
-          imagePullPolicy: Always
+          image: silimate-flow
+          imagePullPolicy: Never
           volumeMounts:
             - name: flows
               mountPath: /app/flows
@@ -26,25 +26,25 @@ spec:
           command: [sh, -c, cp -rf /app/flowrepo/* /app/flows/ && cp -rf /app/steprepo/* /app/steps/]
       containers:
         - name: frontend
-          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-frontend:latest
-          imagePullPolicy: Always
+          image: silimate-platform-frontend
+          imagePullPolicy: Never
         - name: nginx
-          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-nginx:latest
-          imagePullPolicy: Always
+          image: silimate-platform-nginx
+          imagePullPolicy: Never
         - name: dashboard
-          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-dashboard:latest
-          imagePullPolicy: Always
+          image: silimate-dashboard
+          imagePullPolicy: Never
         - name: backend
-          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-backend:latest
-          imagePullPolicy: Always
+          image: silimate-platform-backend
+          imagePullPolicy: Never
           volumeMounts:
             - name: flows
               mountPath: /app/flows
             - name: steps
               mountPath: /app/steps
         - name: flow
-          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-flow:latest
-          imagePullPolicy: Always
+          image: silimate-flow
+          imagePullPolicy: Never
           args: [standalone]
           volumeMounts:
             - name: flows
