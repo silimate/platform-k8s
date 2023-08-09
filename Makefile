@@ -24,6 +24,8 @@ start:
 	kubectl apply -f $(K8S_CONTEXT).k8s.yaml
 stop:
 	kubectl delete -f $(K8S_CONTEXT).k8s.yaml
+redeploy:
+	kubectl rollout restart deployment/silimate-platform-k8s-deployment
 
 # EKS K8s provisioning
 create-cluster:
