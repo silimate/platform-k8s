@@ -5,6 +5,7 @@ metadata:
   namespace: default
 spec:
   name: silimate-platform-db-subnet-group
+  description: Silimate platform RDS database subnet group
   subnetIDs:
     - ${EKS_SUBNET_IDS}
 ---
@@ -18,11 +19,13 @@ spec:
   dbInstanceIdentifier: silimate-platform-db
   dbName: silimate-platform-db
   dbSubnetGroupName: silimate-platform-subnet-group
-  enablePerformanceInsights: true
   engine: aurora-postgresql
   engineVersion: "15.3"
   masterUsername: silimate
-  masterUserPassword: silimate
+  masterUserPassword:
+    namespace: default
+    name: silimate-platform-db-creds
+    key: password
   publiclyAccessible: false
   vpcSecurityGroupIDs:
     - ${RDS_SECURITY_GROUP_ID}
