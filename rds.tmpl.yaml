@@ -1,31 +1,11 @@
-apiVersion: rds.services.k8s.aws/v1alpha1
-kind: DBSubnetGroup
+apiVersion: v1
+kind: Service
 metadata:
-  name: silimate-platform-db-subnet-group
-  namespace: default
+  name: silimate-platform-db-service
+  labels:
+    app: silimate-platform-db-service
 spec:
-  name: silimate-platform-db-subnet-group
-  description: Silimate platform RDS database subnet group
-  subnetIDs:
-    - ${EKS_SUBNET_IDS}
----
-apiVersion: rds.services.k8s.aws/v1alpha1
-kind: DBInstance
-metadata:
-  name: silimate-platform-db
-  namespace: default
-spec:
-  dbInstanceClass: db.r5.large
-  dbInstanceIdentifier: silimate-platform-db
-  dbName: silimate-platform-db
-  dbSubnetGroupName: silimate-platform-subnet-group
-  engine: aurora-postgresql
-  engineVersion: "15.3"
-  masterUsername: silimate
-  masterUserPassword:
-    namespace: default
-    name: silimate-platform-db-creds
-    key: password
-  publiclyAccessible: false
-  vpcSecurityGroupIDs:
-    - ${RDS_SECURITY_GROUP_ID}
+  externalName: ${RDS_ENDPOINT}
+  selector:
+    app: silimate-platform-db-service
+  type: ExternalName
