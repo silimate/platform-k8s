@@ -27,9 +27,12 @@ start-local:
 	kubectl apply -f k8s.yaml
 	kubectl apply -f postgres.yaml
 start-eks-prep:
-	sed -E 's/image: (.*)/image: ${AWS_ECR_REPO}\/\1:latest/;s/imagePullPolicy: Never/imagePullPolicy: Always/' k8s.yaml > eks.k8s.yaml
+	export RDS_ENDPOINT=`aws rds describe-db-clusters --db-cluster-identifier ${AWS_DB_NAME} --query 'DBClusters[0].Endpoint' --output text`; \
+	sed -E "s/image: (.*)/image: ${AWS_ECR_REPO}\/\1:latest/;s/imagePullPolicy: Never/imagePullPolicy: Always/" k8s.yaml > eks.k8s.yaml
 start-eks: start-eks-prep
 	kubectl apply -f eks.k8s.yaml
+stop-eks:
+	kubectl delete -f eks.k8s.yaml
 redeploy:
 	kubectl rollout restart deployment/silimate-platform-k8s-deployment
 
