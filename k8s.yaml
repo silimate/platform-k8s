@@ -51,13 +51,25 @@ spec:
               mountPath: /app/flows
             - name: steps
               mountPath: /app/steps
-        - name: flow
+        - name: flow-scheduler
           image: silimate-flow
           imagePullPolicy: Never
           env:
             - name: DB_HOSTNAME
               value: localhost
           command: [bash, -c, export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=`echo $DATABASE_URL | sed "s/localhost/$DB_HOSTNAME/"` && airflow standalone]
+          volumeMounts:
+            - name: flows
+              mountPath: /app/flows
+            - name: steps
+              mountPath: /app/steps
+        - name: flow-webserver
+          image: silimate-flow
+          imagePullPolicy: Never
+          env:
+            - name: DB_HOSTNAME
+              value: localhost
+          command: [bash, -c, export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=`echo $DATABASE_URL | sed "s/localhost/$DB_HOSTNAME/"` && airflow scheduler]
           volumeMounts:
             - name: flows
               mountPath: /app/flows

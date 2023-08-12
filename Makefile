@@ -37,9 +37,9 @@ stop-eks:
 	kubectl delete -f eks.k8s.yaml
 
 expose:
-	kubectl apply -f loadbal.yaml
+	kubectl apply -f load-balancer.yaml
 unexpose:
-	kubectl delete -f loadbal.yaml
+	kubectl delete -f load-balancer.yaml
 
 
 # EKS K8s provisioning
