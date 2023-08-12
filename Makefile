@@ -34,7 +34,10 @@ start-eks-prep:
 start-eks: start-eks-prep
 	kubectl apply -f eks.k8s.yaml
 stop-eks:
-	kubectl delete -f eks.k8s.yaml
+	kubectl delete -f eks.k8s.yamlkubectl create namespace
+
+redeploy:
+	kubectl rollout restart deployment/silimate-platform-k8s-deployment
 
 expose:
 	kubectl apply -f load-balancer.yaml
