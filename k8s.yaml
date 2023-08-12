@@ -18,12 +18,15 @@ spec:
         - name: flow-init
           image: silimate-flow
           imagePullPolicy: Never
+          env:
+            - name: DB_HOSTNAME
+              value: localhost
           volumeMounts:
             - name: flows
               mountPath: /app/flows
             - name: steps
               mountPath: /app/steps
-          command: [sh, -c, cp -rf /app/flowrepo/* /app/flows/ && cp -rf /app/steprepo/* /app/steps/]
+          command: [bash, -c, cp -rf /app/flowrepo/* /app/flows/ && cp -rf /app/steprepo/* /app/steps/ && psql `echo $DATABASE_URL | sed "s/localhost/$DB_HOSTNAME/"` -f dbinit.sql]
       containers:
         - name: frontend
           image: silimate-platform-frontend
@@ -34,9 +37,15 @@ spec:
         - name: dashboard
           image: silimate-dashboard
           imagePullPolicy: Never
+          env:
+            - name: GF_DATABASE_HOST
+              value: localhost:5432
         - name: backend
           image: silimate-platform-backend
           imagePullPolicy: Never
+          env:
+            - name: DB_HOSTNAME
+              value: localhost
           volumeMounts:
             - name: flows
               mountPath: /app/flows
@@ -45,7 +54,10 @@ spec:
         - name: flow
           image: silimate-flow
           imagePullPolicy: Never
-          args: [standalone]
+          env:
+            - name: DB_HOSTNAME
+              value: localhost
+          command: [bash, -c, export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=`echo $DATABASE_URL | sed "s/localhost/$DB_HOSTNAME/"` && airflow standalone]
           volumeMounts:
             - name: flows
               mountPath: /app/flows

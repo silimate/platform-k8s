@@ -6,13 +6,13 @@ AWS_ACCOUNT_ID := 596912105783
 AWS_REGION := us-west-1
 AWS_ECR_REPO := ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 AWS_CLUSTER_NAME := silimate-platform-k8s-test
-AWS_DB_NAME := silimate-platform-db-dev2
+AWS_DB_NAME := silimate-platform-db-dev
 AWS_ROOT_ARN := arn:aws:iam::${AWS_ACCOUNT_ID}:root
 AWS_ADDON_NAME := efs-csi-driver
 
 # Utilities
 get-endpoint:
-	kubectl get svc -o wide
+	kubectl get svc --field-selector metadata.name=silimate-platform-service 
 get-pods:
 	kubectl get pods
 get-events:
@@ -28,7 +28,7 @@ start-local:
 	kubectl apply -f postgres.yaml
 start-eks-prep:
 	export RDS_ENDPOINT=`aws rds describe-db-clusters --db-cluster-identifier ${AWS_DB_NAME} --query 'DBClusters[0].Endpoint' --output text`; \
-	sed -E "s/image: (.*)/image: ${AWS_ECR_REPO}\/\1:latest/;s/imagePullPolicy: Never/imagePullPolicy: Always/" k8s.yaml > eks.k8s.yaml
+	sed -E "s/image: (.*)/image: ${AWS_ECR_REPO}\/\1:latest/;s/imagePullPolicy: Never/imagePullPolicy: Always/;s/ localhost/ $$RDS_ENDPOINT/" k8s.yaml > eks.k8s.yaml
 start-eks: start-eks-prep
 	kubectl apply -f eks.k8s.yaml
 stop-eks:
@@ -52,8 +52,8 @@ create-rds-db:
 	echo $$EKS_SUBNET_IDS; \
 	echo $$EKS_CIDR_BLOCK; \
 	\
-	aws rds create-db-subnet-group --db-subnet-group-name rds-db-subnet-group --db-subnet-group-description "RDS-EKS DB subnet group" --subnet-ids $$EKS_SUBNET_IDS; \
-	aws ec2 create-security-group --group-name rds-sec-group --description "RDS-EKS security group" --vpc-id "$$EKS_VPC_ID" --output text; \
+	aws rds create-db-subnet-group --db-subnet-group-name ${AWS_CLUSTER_NAME}-db-subnet-group --db-subnet-group-description "RDS-EKS DB subnet group" --subnet-ids $$EKS_SUBNET_IDS; \
+	aws ec2 create-security-group --group-name ${AWS_CLUSTER_NAME}-sec-group --description "RDS-EKS security group" --vpc-id "$$EKS_VPC_ID" --output text; \
 	export RDS_SECURITY_GROUP_ID=`aws ec2 describe-security-groups --filters "Name=group-name,Values=rds-sec-group" --query 'SecurityGroups[0].GroupId' --output text`; \
 	aws ec2 authorize-security-group-ingress --group-id $$RDS_SECURITY_GROUP_ID --protocol tcp --port 5432 --cidr $$EKS_CIDR_BLOCK; \
 	\
@@ -61,6 +61,7 @@ create-rds-db:
 	aws rds create-db-cluster \
 		--db-cluster-identifier ${AWS_DB_NAME} \
 		--db-subnet-group-name rds-db-subnet-group \
+		--database-name flow \
 		--vpc-security-group-ids $$RDS_SECURITY_GROUP_ID \
 		--engine aurora-postgresql \
 		--storage-type aurora-iopt1 \
@@ -84,7 +85,4 @@ create-rds-db:
 		--enable-performance-insights \
 		--monitoring-interval 60 \
 		--monitoring-role arn:aws:iam::${AWS_ACCOUNT_ID}:role/rds-monitoring-role \
-		--db-instance-class db.r5.large; \
-	export RDS_ENDPOINT=`aws rds describe-db-clusters --db-cluster-identifier ${AWS_DB_NAME} --query 'DBClusters[0].Endpoint' --output text`; \
-	envsubst < rds.tmpl.yaml > rds.yaml
-	kubectl apply -f rds.yaml
+		--db-instance-class db.r5.large
