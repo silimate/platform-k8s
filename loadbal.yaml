@@ -1,0 +1,13 @@
+# Load balancer to expose the service
+apiVersion: v1
+kind: Service
+metadata:
+  name: silimate-platform-service
+  namespace: default
+spec:
+  type: LoadBalancer
+  selector:
+    app: web
+  ports:
+    - port: 80
+      targetPort: 80

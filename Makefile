@@ -25,7 +25,9 @@ debug:
 # Start/stop k8s services
 start-local:
 	kubectl apply -f k8s.yaml
-	kubectl apply -f postgres.yaml
+stop-local:
+	kubectl delete -f k8s.yaml
+
 start-eks-prep:
 	export RDS_ENDPOINT=`aws rds describe-db-clusters --db-cluster-identifier ${AWS_DB_NAME} --query 'DBClusters[0].Endpoint' --output text`; \
 	sed -E "s/image: (.*)/image: ${AWS_ECR_REPO}\/\1:latest/;s/imagePullPolicy: Never/imagePullPolicy: Always/;s/ localhost/ $$RDS_ENDPOINT/" k8s.yaml > eks.k8s.yaml
@@ -33,8 +35,12 @@ start-eks: start-eks-prep
 	kubectl apply -f eks.k8s.yaml
 stop-eks:
 	kubectl delete -f eks.k8s.yaml
-redeploy:
-	kubectl rollout restart deployment/silimate-platform-k8s-deployment
+
+expose:
+	kubectl apply -f loadbal.yaml
+unexpose:
+	kubectl delete -f loadbal.yaml
+
 
 # EKS K8s provisioning
 create-cluster:
@@ -42,7 +48,11 @@ create-cluster:
 delete-cluster:
 	eksctl delete cluster --name ${AWS_CLUSTER_NAME} --region ${AWS_REGION}
 
+
 # EKS connect to RDS
+create-local-db:
+	kubectl apply -f postgres.yaml
+
 create-rds-db:
 	export EKS_VPC_ID=`aws eks describe-cluster --name=${AWS_CLUSTER_NAME} --query cluster.resourcesVpcConfig.vpcId --output text`; \
 	export EKS_SUBNET_IDS=`aws ec2 describe-subnets --filters "Name=vpc-id,Values=$$EKS_VPC_ID" --query 'Subnets[*].SubnetId' --output text`; \
