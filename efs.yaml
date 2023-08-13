@@ -1,0 +1,18 @@
+# EFS storage class
+apiVersion: v1
+kind: StorageClass
+metadata:
+  name: efs-sc
+provisioner: efs.csi.aws.com
+---
+# Shared volume for all pods
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: share-claim
+spec:
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc
+  persistentVolumeReclaimPolicy: Retain

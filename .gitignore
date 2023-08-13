@@ -1,1 +1,3 @@
 *.k8s.yaml
+aws-auth.yaml
+aws-efs-csi-driver-trust-policy.json

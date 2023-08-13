@@ -22,11 +22,9 @@ spec:
             - name: DB_HOSTNAME
               value: localhost
           volumeMounts:
-            - name: flows
-              mountPath: /app/flows
-            - name: steps
-              mountPath: /app/steps
-          command: [bash, -c, cp -rf /app/flowrepo/* /app/flows/ && cp -rf /app/steprepo/* /app/steps/ && psql `echo $DATABASE_URL | sed "s/localhost/$DB_HOSTNAME/"` -f dbinit.sql]
+            - name: share
+              mountPath: /app/share
+          command: [bash, -c, cp -rf /app/flowrepo/ /app/share/flows && cp -rf /app/steprepo/ /app/share/steps/ && psql `echo $DATABASE_URL | sed "s/localhost/$DB_HOSTNAME/"` -f dbinit.sql]
       containers:
         - name: frontend
           image: silimate-platform-frontend
@@ -47,10 +45,8 @@ spec:
             - name: DB_HOSTNAME
               value: localhost
           volumeMounts:
-            - name: flows
-              mountPath: /app/flows
-            - name: steps
-              mountPath: /app/steps
+            - name: share
+              mountPath: /app/share
         - name: flow-scheduler
           image: silimate-flow
           imagePullPolicy: Never
@@ -59,10 +55,8 @@ spec:
               value: localhost
           command: [bash, -c, export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=`echo $DATABASE_URL | sed "s/localhost/$DB_HOSTNAME/"` && airflow standalone]
           volumeMounts:
-            - name: flows
-              mountPath: /app/flows
-            - name: steps
-              mountPath: /app/steps
+            - name: share
+              mountPath: /app/share
         - name: flow-webserver
           image: silimate-flow
           imagePullPolicy: Never
@@ -71,12 +65,9 @@ spec:
               value: localhost
           command: [bash, -c, export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=`echo $DATABASE_URL | sed "s/localhost/$DB_HOSTNAME/"` && airflow scheduler]
           volumeMounts:
-            - name: flows
-              mountPath: /app/flows
-            - name: steps
-              mountPath: /app/steps
+            - name: share
+              mountPath: /app/share
       volumes:
-        - name: flows
-          emptyDir: {}
-        - name: steps
-          emptyDir: {}
+        - name: share
+          persistentVolumeClaim:
+            claimName: share-claim

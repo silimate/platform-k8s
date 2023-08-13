@@ -1,0 +1,11 @@
+# Shared volume for all pods
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: share-claim
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
