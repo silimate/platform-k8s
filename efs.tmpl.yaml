@@ -6,7 +6,7 @@ metadata:
 provisioner: efs.csi.aws.com
 parameters:
   provisioningMode: efs-ap
-  fileSystemId: fs-04ed18ab0a649fa80
+  fileSystemId: ${EFS_ID}
   directoryPerms: "700"
 ---
 # Shared volume for all pods

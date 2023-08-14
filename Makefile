@@ -23,10 +23,9 @@ debug:
 	kubectl run -it --rm --restart=Never alpine --image=alpine sh
 
 # Start/stop k8s services
-aws-auth-prep:
+aws-auth:
 	export AWS_ACCOUNT_ID=`aws sts get-caller-identity --query Account --output text`; \
 	envsubst < aws-auth.tmpl.yaml > aws-auth.yaml
-aws-auth: aws-auth-prep
 	kubectl patch configmap/aws-auth -n kube-system --type merge --patch-file aws-auth.yaml
 
 start-local:
@@ -34,10 +33,9 @@ start-local:
 stop-local:
 	kubectl delete -f k8s.yaml
 
-start-eks-prep:
+start-eks:
 	export RDS_ENDPOINT=`aws rds describe-db-clusters --db-cluster-identifier ${AWS_DB_NAME} --query 'DBClusters[0].Endpoint' --output text`; \
 	sed -E "s/image: (.*)/image: ${AWS_ECR_REPO}\/\1:latest/;s/imagePullPolicy: Never/imagePullPolicy: Always/;s/ localhost/ $$RDS_ENDPOINT/" k8s.yaml > eks.k8s.yaml
-start-eks: start-eks-prep
 	kubectl apply -f eks.k8s.yaml
 stop-eks:
 	kubectl delete -f eks.k8s.yaml
@@ -65,7 +63,7 @@ delete-cluster:
 	eksctl delete cluster --name ${AWS_CLUSTER_NAME} --region ${AWS_REGION}
 
 
-# EKS connect to RDS
+# EKS connect to DB (local PostgreSQL or RDS)
 create-local-db:
 	kubectl apply -f postgres.yaml
 
@@ -113,39 +111,63 @@ create-rds-db:
 		--monitoring-role arn:aws:iam::${AWS_ACCOUNT_ID}:role/rds-monitoring-role \
 		--db-instance-class db.r5.large
 
+
+# EKS connect to FS (local NFS or EFS)
 create-nfs:
 	echo TODO
 
-create-efs-addon:
+create-efs:
+	echo Creating role and policies...; \
 	export OIDC_PROVIDER=`aws eks describe-cluster --name ${AWS_CLUSTER_NAME} --query "cluster.identity.oidc.issuer" --output text | cut -d '/' -f 5`; \
 	export AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}; \
 	export AWS_REGION=${AWS_REGION}; \
 	envsubst < aws-efs-csi-driver-trust-policy.tmpl.json > aws-efs-csi-driver-trust-policy.json; \
 	aws iam create-role --role-name AmazonEKS_EFS_CSI_DriverRole_${AWS_CLUSTER_NAME} --assume-role-policy-document file://"aws-efs-csi-driver-trust-policy.json"; \
 	aws iam attach-role-policy --role-name AmazonEKS_EFS_CSI_DriverRole_${AWS_CLUSTER_NAME} --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy; \
-	aws eks create-addon --cluster-name ${AWS_CLUSTER_NAME} --addon-name aws-efs-csi-driver --service-account-role-arn arn:aws:iam::${AWS_ACCOUNT_ID}:role/AmazonEKS_EFS_CSI_DriverRole_${AWS_CLUSTER_NAME}
-create-efs: create-efs-addon
+	\
+	echo Creating EFS addon for EKS...; \
+	aws eks create-addon --cluster-name ${AWS_CLUSTER_NAME} --addon-name aws-efs-csi-driver --service-account-role-arn arn:aws:iam::${AWS_ACCOUNT_ID}:role/AmazonEKS_EFS_CSI_DriverRole_${AWS_CLUSTER_NAME}; \
+	\
+	echo Getting cluster info...; \
 	export EKS_VPC_ID=`aws eks describe-cluster --name=${AWS_CLUSTER_NAME} --query cluster.resourcesVpcConfig.vpcId --output text`; \
 	export EKS_SUBNET_IDS=`aws ec2 describe-subnets --filters "Name=vpc-id,Values=$$EKS_VPC_ID" --query 'Subnets[*].SubnetId' --output text`; \
 	export EKS_CIDR_BLOCK=`aws ec2 describe-vpcs --vpc-ids $$EKS_VPC_ID --query "Vpcs[].CidrBlock" --output text`; \
 	\
-	echo $$EKS_VPC_ID; \
-	echo $$EKS_SUBNET_IDS; \
-	echo $$EKS_CIDR_BLOCK; \
+	echo EKS VPC ID: $$EKS_VPC_ID; \
+	echo EKS subnet IDs: $$EKS_SUBNET_IDS; \
+	echo EKS CIDR block: $$EKS_CIDR_BLOCK; \
 	\
+	echo Creating security group and authorizations...; \
 	aws ec2 create-security-group --group-name ${AWS_CLUSTER_NAME}-sec-group --description "EFS-EKS security group" --vpc-id "$$EKS_VPC_ID" --output text; \
 	export EKS_SECURITY_GROUP_ID=`aws ec2 describe-security-groups --filters "Name=group-name,Values=${AWS_CLUSTER_NAME}-sec-group" --query 'SecurityGroups[0].GroupId' --output text`; \
+	echo EKS security group ID: $$EKS_SECURITY_GROUP_ID; \
 	aws ec2 authorize-security-group-ingress --group-id $$EKS_SECURITY_GROUP_ID --protocol tcp --port 2049 --cidr $$EKS_CIDR_BLOCK; \
 	\
+	echo Creating EFS file system...; \
 	aws efs create-file-system --region ${AWS_REGION} --performance-mode generalPurpose --creation-token ${AWS_CLUSTER_NAME}-efs; \
 	export EFS_ID=`aws efs describe-file-systems --query "FileSystems[?CreationToken=='${AWS_CLUSTER_NAME}-efs'].FileSystemId" --output text`; \
-	echo $$EFS_ID; \
+	echo EFS ID: $$EFS_ID; \
 	\
+	echo Creating mount targets...; \
+	sleep 5; \
 	export EKS_SUBNET_ID=`aws ec2 describe-subnets --filters "Name=vpc-id,Values=$$EKS_VPC_ID" --query 'Subnets[0].SubnetId' --output text`; \
 	aws efs create-mount-target --file-system-id $$EFS_ID --subnet-id $$EKS_SUBNET_ID --security-groups $$EKS_SECURITY_GROUP_ID; \
-	\
 	export EKS_SUBNET_ID=`aws ec2 describe-subnets --filters "Name=vpc-id,Values=$$EKS_VPC_ID" --query 'Subnets[1].SubnetId' --output text`; \
 	aws efs create-mount-target --file-system-id $$EFS_ID --subnet-id $$EKS_SUBNET_ID --security-groups $$EKS_SECURITY_GROUP_ID; \
-	\
 	export EKS_SUBNET_ID=`aws ec2 describe-subnets --filters "Name=vpc-id,Values=$$EKS_VPC_ID" --query 'Subnets[2].SubnetId' --output text`; \
 	aws efs create-mount-target --file-system-id $$EFS_ID --subnet-id $$EKS_SUBNET_ID --security-groups $$EKS_SECURITY_GROUP_ID; \
+	\
+	echo Creating storage class and PVC...; \
+	envsubst < efs.tmpl.yaml > efs.yaml
+	kubectl apply -f efs.yaml
+	echo Done creating EFS!
+delete-efs:
+	echo Deleting storage class and PVC!
+	kubectl delete -f efs.yaml; \
+	echo Deleted storage class and PVC!
+delete-efs-hard: delete-efs
+	echo Deleting EFS on AWS...
+	export EFS_ID=`aws efs describe-file-systems --query "FileSystems[?CreationToken=='${AWS_CLUSTER_NAME}-efs'].FileSystemId" --output text`; \
+	echo $$EFS_ID; \
+	aws efs delete-file-system --file-system-id $$EFS_ID;
+	echo Deleted EFS!
