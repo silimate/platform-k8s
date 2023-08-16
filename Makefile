@@ -67,6 +67,7 @@ delete-cluster:
 create-local-db:
 	kubectl apply -f postgres.yaml
 
+# TODO: instead of cidr use a self-referencing security group rule
 create-rds-db:
 	export EKS_VPC_ID=`aws eks describe-cluster --name=${AWS_CLUSTER_NAME} --query cluster.resourcesVpcConfig.vpcId --output text`; \
 	export EKS_SUBNET_IDS=`aws ec2 describe-subnets --filters "Name=vpc-id,Values=$$EKS_VPC_ID" --query 'Subnets[*].SubnetId' --output text`; \

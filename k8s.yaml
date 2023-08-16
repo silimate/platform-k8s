@@ -24,7 +24,7 @@ spec:
           volumeMounts:
             - name: share
               mountPath: /app/share
-          command: [bash, -c, cp -rf /app/flowrepo/ /app/share/flows && cp -rf /app/steprepo/ /app/share/steps/ && psql `echo $DATABASE_URL | sed "s/localhost/$DB_HOSTNAME/"` -f dbinit.sql]
+          command: [bash, -c, cd /app/share && rm -rf steps flows && git clone https://github.com/silimate/steps && git clone https://github.com/silimate/flows && cd - && psql `echo $DATABASE_URL | sed "s/localhost/$DB_HOSTNAME/"` -f dbinit.sql]
       containers:
         - name: frontend
           image: silimate-platform-frontend
