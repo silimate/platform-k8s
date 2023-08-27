@@ -3,67 +3,69 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: silimate-platform-k8s-deployment
-  namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: web
+      app: silimate
   template:
     metadata:
       labels:
-        app: web
+        app: silimate
     spec:
       initContainers:
         - name: flow-init
-          image: silimate-flow
-          imagePullPolicy: Never
-          env:
-            - name: DB_HOSTNAME
-              value: localhost
-          volumeMounts:
-            - name: share
-              mountPath: /app/share
-          command: [bash, -c, cd /app/share && rm -rf steps flows && git clone https://github.com/silimate/steps && git clone https://github.com/silimate/flows && cd - && psql `echo $DATABASE_URL | sed "s/localhost/$DB_HOSTNAME/"` -f dbinit.sql]
+          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-flow:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: silimate-secrets
+          args: ["db", "migrate"]
       containers:
         - name: frontend
-          image: silimate-platform-frontend
-          imagePullPolicy: Never
-        - name: dashboard
-          image: silimate-dashboard
-          imagePullPolicy: Never
-          env:
-            - name: GF_DATABASE_HOST
-              value: localhost:5432
+          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-frontend:latest
+          imagePullPolicy: Always
         - name: backend
-          image: silimate-platform-backend
-          imagePullPolicy: Never
-          env:
-            - name: DB_HOSTNAME
-              value: localhost
+          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-backend:latest
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: silimate-config
+            - secretRef:
+                name: silimate-secrets
+            - secretRef:
+                name: openai-secrets
           volumeMounts:
             - name: share
               mountPath: /app/share
+        - name: dashboard
+          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-dashboard:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: silimate-secrets
         - name: flow-scheduler
-          image: silimate-flow
-          imagePullPolicy: Never
-          env:
-            - name: DB_HOSTNAME
-              value: localhost
-          command: [bash, -c, export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=`echo $DATABASE_URL | sed "s/localhost/$DB_HOSTNAME/"` && airflow standalone]
+          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-flow:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: silimate-secrets
+          args: ["scheduler"]
           volumeMounts:
             - name: share
               mountPath: /app/share
         - name: flow-webserver
-          image: silimate-flow
-          imagePullPolicy: Never
-          env:
-            - name: DB_HOSTNAME
-              value: localhost
-          command: [bash, -c, export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=`echo $DATABASE_URL | sed "s/localhost/$DB_HOSTNAME/"` && airflow scheduler]
+          image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-flow:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: silimate-secrets
+          args: ["webserver"]
           volumeMounts:
             - name: share
               mountPath: /app/share
+      imagePullSecrets:
+        - name: aws-ecr-secret
       volumes:
         - name: share
           persistentVolumeClaim:

@@ -22,3 +22,17 @@ spec:
   resources:
     requests:
       storage: 5Gi # this isn't actually used!
+---
+# Volume for database
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pv-claim
+spec:
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc
+  resources:
+    requests:
+      storage: 5Gi # this isn't actually used!

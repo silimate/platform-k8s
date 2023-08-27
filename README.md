@@ -1,17 +1,31 @@
 # Silimate Platform K8s
 Kubernetes configuration/provisioning for deployments, including Postgres database Docker
 
-## AWS EKS Deployment guide
-Go to AWS and do the following:
-- Spin up RDS Postgres instance
-  - Type: Aurora (PostgreSQL Compatible)
-  - Version: latest
-  - Name: `silimate-platform-db`
-  - Username: `silimate`
-  - Password: auto-generated
-  - Instance type: `db.r5.large`
-  - Don't create an aurora replica
-  - VPC: K8s VPC
-  - DevOps Guru: off
-- Put password as secret into all GitHub actions that generate Docker containers
-- 
+## Common Setup
+1. Install AWS CLI v2
+2. Log into AWS with `aws configure`
+
+## AWS EKS Deployment Standard Operating Procedure
+1. Install `eksctl`
+2. Set `K8S_ENV` in `Makefile` to {`dev`, `prod`, `test`}
+3. Create cluster with `make create-cluster`
+4. Set up AWS authorization with `make aws-auth`
+5. Create EFS addon with `make create-efs`
+6. (Optional) Make sure `KUBE_CONFIG_DATA` secret is updated in all [GitHub Actions for Continuous Deployment (CD)](https://github.com/kodermax/kubectl-aws-eks)
+7. Follow "Common SOP" below
+
+## On-premise Deployment Standard Operating Procedure
+1. Install Docker Desktop or `docker`
+2. Start Kubernetes in Docker Desktop or `minikube`
+3. Create AWS account and log in: [register AWS account ID with Silimate](https://repost.aws/knowledge-center/secondary-account-access-ecr)
+4. Create local PVC with `make create-local-pvc`
+5. Follow "Common SOP" below
+
+## Common Standard Operating Procedure
+1. Deploy secrets with `make create-secrets`
+2. Deploy AWS ECR secrets with `make create-ecr-secret`
+3. Deploy the config file with `make create-config`
+4. Deploy PostgreSQL database `make start-db`
+5. Deploy Silimate platform with `make start`
+6. Create worker auth with `make worker-auth`
+7. Expose service to HTTP(S) traffic with `make expose`

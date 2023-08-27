@@ -8,4 +8,16 @@ spec:
     - ReadWriteMany
   resources:
     requests:
+      storage: 32Gi
+---
+# Volume for database
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pv-claim
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
       storage: 5Gi

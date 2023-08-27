@@ -1,18 +1,17 @@
 # Local or EKS (cloud)
 K8S_CONTEXT := eks
+K8S_ENV := dev
 
 # AWS Configuration
 AWS_ACCOUNT_ID := 596912105783
 AWS_REGION := us-west-1
 AWS_ECR_REPO := ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-AWS_CLUSTER_NAME := silimate-platform-k8s-test
-AWS_DB_NAME := silimate-platform-db-dev
+AWS_CLUSTER_NAME := silimate-platform-k8s-${K8S_ENV}
 AWS_ROOT_ARN := arn:aws:iam::${AWS_ACCOUNT_ID}:root
-AWS_ADDON_NAME := efs-csi-driver
 
 # Utilities
 get-endpoint:
-	kubectl get svc --field-selector metadata.name=silimate-platform-service 
+	kubectl get svc --field-selector metadata.name=silimate-platform-service
 get-pods:
 	kubectl get pods
 get-events:
@@ -25,25 +24,42 @@ debug:
 # Start/stop k8s services
 aws-auth:
 	export AWS_ACCOUNT_ID=`aws sts get-caller-identity --query Account --output text`; \
-	envsubst < aws-auth.tmpl.yaml > aws-auth.yaml
-	kubectl patch configmap/aws-auth -n kube-system --type merge --patch-file aws-auth.yaml
-
-start-local:
-	kubectl apply -f k8s.yaml
-stop-local:
-	kubectl delete -f k8s.yaml
-
-start-eks:
-	export RDS_ENDPOINT=`aws rds describe-db-clusters --db-cluster-identifier ${AWS_DB_NAME} --query 'DBClusters[0].Endpoint' --output text`; \
-	sed -E "s/image: (.*)/image: ${AWS_ECR_REPO}\/\1:latest/;s/imagePullPolicy: Never/imagePullPolicy: Always/;s/ localhost/ $$RDS_ENDPOINT/" k8s.yaml > eks.k8s.yaml
-	kubectl apply -f eks.k8s.yaml
-stop-eks:
-	kubectl delete -f eks.k8s.yaml
+	envsubst < aws/aws-auth.tmpl.yaml > aws/aws-auth.yaml
+	kubectl patch configmap/aws-auth -n kube-system --type merge --patch-file aws/aws-auth.yaml
 
 worker-auth:
 	kubectl apply -f worker-auth.yaml
 	kubectl create clusterrolebinding service-reader-pod --clusterrole=service-reader --serviceaccount=default:default
 
+create-secrets:
+	kubectl apply -f secrets.yaml
+delete-secrets:
+	kubectl delete -f secrets.yaml
+
+create-ecr-secret:
+	kubectl create secret docker-registry aws-ecr-secret \
+		--docker-server=$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com \
+		--docker-username=AWS \
+		--docker-password=`aws ecr get-login-password --region $(AWS_REGION)`
+delete-ecr-secret:
+	kubectl delete secrets aws-ecr-secret
+
+create-config:
+	kubectl apply -f config/$(K8S_CONTEXT)-$(K8S_ENV).yaml
+delete-config:
+	kubectl delete -f config/$(K8S_CONTEXT)-$(K8S_ENV).yaml
+
+start-db:
+	kubectl apply -f postgres.yaml
+stop-db:
+	kubectl delete -f postgres.yaml
+redeploy-db:
+	kubectl rollout restart deployment/postgres
+
+start:
+	kubectl apply -f k8s.yaml
+stop:
+	kubectl delete -f k8s.yaml
 redeploy:
 	kubectl rollout restart deployment/silimate-platform-k8s-deployment
 
@@ -56,6 +72,13 @@ kill-workers:
 	kubectl delete pods -l kubernetes_pod_operator=True
 
 
+# Local PVC
+create-local-pvc:
+	kubectl apply -f local-pvc.yaml
+delete-local-pvc:
+	kubectl delete -f local-pvc.yaml
+
+
 # EKS K8s provisioning
 create-cluster:
 	eksctl create cluster --name ${AWS_CLUSTER_NAME} --region ${AWS_REGION} --version=1.27 --with-oidc
@@ -63,67 +86,14 @@ delete-cluster:
 	eksctl delete cluster --name ${AWS_CLUSTER_NAME} --region ${AWS_REGION}
 
 
-# EKS connect to DB (local PostgreSQL or RDS)
-create-local-db:
-	kubectl apply -f postgres.yaml
-
-# TODO: instead of cidr use a self-referencing security group rule
-create-rds-db:
-	export EKS_VPC_ID=`aws eks describe-cluster --name=${AWS_CLUSTER_NAME} --query cluster.resourcesVpcConfig.vpcId --output text`; \
-	export EKS_SUBNET_IDS=`aws ec2 describe-subnets --filters "Name=vpc-id,Values=$$EKS_VPC_ID" --query 'Subnets[*].SubnetId' --output text`; \
-	export EKS_CIDR_BLOCK=`aws ec2 describe-vpcs --vpc-ids $$EKS_VPC_ID --query "Vpcs[].CidrBlock" --output text`; \
-	\
-	echo $$EKS_VPC_ID; \
-	echo $$EKS_SUBNET_IDS; \
-	echo $$EKS_CIDR_BLOCK; \
-	\
-	aws rds create-db-subnet-group --db-subnet-group-name ${AWS_CLUSTER_NAME}-db-subnet-group --db-subnet-group-description "RDS-EKS DB subnet group" --subnet-ids $$EKS_SUBNET_∂DS; \
-	aws ec2 create-security-group --group-name ${AWS_CLUSTER_NAME}-sec-group --description "RDS-EKS security group" --vpc-id "$$EKS_VPC_ID" --output text; \
-	export EKS_SECURITY_GROUP_ID=`aws ec2 describe-security-groups --filters "Name=group-name,Values=${AWS_CLUSTER_NAME}-sec-group" --query 'SecurityGroups[0].GroupId' --output text`; \
-	aws ec2 authorize-security-group-ingress --group-id $$EKS_SECURITY_GROUP_ID --protocol tcp --port 5432 --cidr $$EKS_CIDR_BLOCK; \
-	\
-	echo $$EKS_SECURITY_GROUP_ID; \
-	aws rds create-db-cluster \
-		--db-cluster-identifier ${AWS_DB_NAME} \
-		--db-subnet-group-name rds-db-subnet-group \
-		--database-name flow \
-		--vpc-security-group-ids $$EKS_SECURITY_GROUP_ID \
-		--engine aurora-postgresql \
-		--storage-type aurora-iopt1 \
-		--master-username silimate \
-		--master-user-password silimate \
-		--engine-version 15.3 \
-		--storage-encrypted \
-		--region ${AWS_REGION}; \
-	aws rds create-db-instance \
-		--db-cluster-identifier ${AWS_DB_NAME} \
-		--db-instance-identifier ${AWS_DB_NAME}-instance-1 \
-		--engine aurora-postgresql \
-		--enable-performance-insights \
-		--monitoring-interval 60 \
-		--monitoring-role arn:aws:iam::${AWS_ACCOUNT_ID}:role/rds-monitoring-role \
-		--db-instance-class db.r5.large; \
-	aws rds create-db-instance \
-		--db-cluster-identifier ${AWS_DB_NAME} \
-		--db-instance-identifier ${AWS_DB_NAME}-instance-2 \
-		--engine aurora-postgresql \
-		--enable-performance-insights \
-		--monitoring-interval 60 \
-		--monitoring-role arn:aws:iam::${AWS_ACCOUNT_ID}:role/rds-monitoring-role \
-		--db-instance-class db.r5.large
-
-
 # EKS connect to FS (local NFS or EFS)
-create-nfs:
-	echo TODO
-
 create-efs:
 	echo Creating role and policies...; \
 	export OIDC_PROVIDER=`aws eks describe-cluster --name ${AWS_CLUSTER_NAME} --query "cluster.identity.oidc.issuer" --output text | cut -d '/' -f 5`; \
 	export AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}; \
 	export AWS_REGION=${AWS_REGION}; \
-	envsubst < aws-efs-csi-driver-trust-policy.tmpl.json > aws-efs-csi-driver-trust-policy.json; \
-	aws iam create-role --role-name AmazonEKS_EFS_CSI_DriverRole_${AWS_CLUSTER_NAME} --assume-role-policy-document file://"aws-efs-csi-driver-trust-policy.json"; \
+	envsubst < aws/aws-efs-csi-driver-trust-policy.tmpl.json > aws/aws-efs-csi-driver-trust-policy.json; \
+	aws iam create-role --role-name AmazonEKS_EFS_CSI_DriverRole_${AWS_CLUSTER_NAME} --assume-role-policy-document file://"aws/aws-efs-csi-driver-trust-policy.json"; \
 	aws iam attach-role-policy --role-name AmazonEKS_EFS_CSI_DriverRole_${AWS_CLUSTER_NAME} --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy; \
 	\
 	echo Creating EFS addon for EKS...; \
@@ -159,16 +129,10 @@ create-efs:
 	aws efs create-mount-target --file-system-id $$EFS_ID --subnet-id $$EKS_SUBNET_ID --security-groups $$EKS_SECURITY_GROUP_ID; \
 	\
 	echo Creating storage class and PVC...; \
-	envsubst < efs.tmpl.yaml > efs.yaml
-	kubectl apply -f efs.yaml
+	envsubst < aws/efs-pvc.tmpl.yaml > aws/efs-pvc.yaml
+	kubectl apply -f aws/efs-pvc.yaml
 	echo Done creating EFS!
 delete-efs:
 	echo Deleting storage class and PVC!
-	kubectl delete -f efs.yaml; \
+	kubectl delete -f aws/efs-pvc.yaml; \
 	echo Deleted storage class and PVC!
-delete-efs-hard: delete-efs
-	echo Deleting EFS on AWS...
-	export EFS_ID=`aws efs describe-file-systems --query "FileSystems[?CreationToken=='${AWS_CLUSTER_NAME}-efs'].FileSystemId" --output text`; \
-	echo $$EFS_ID; \
-	aws efs delete-file-system --file-system-id $$EFS_ID;
-	echo Deleted EFS!

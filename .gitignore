@@ -1,4 +1,4 @@
-*.k8s.yaml
-aws-auth.yaml
-aws-efs-csi-driver-trust-policy.json
-efs.yaml
+aws/aws-auth.yaml
+aws/aws-efs-csi-driver-trust-policy.json
+aws/efs-pvc.yaml
+# secrets.yaml

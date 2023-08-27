@@ -14,4 +14,3 @@ rules:
 - apiGroups: [""]
   resources: ["pods/log"]
   verbs: ["get"]
-# TODO: MAKE THIS SECURE

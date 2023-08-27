@@ -3,60 +3,45 @@ kind: Service
 metadata:
   name: postgres
   labels:
-    app: postgres
+    app: silimate
 spec:
   ports:
     - port: 5432
   selector:
-    app: postgres
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: postgres-pv-claim
-  labels:
-    app: postgres
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 5Gi
+    app: silimate
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
   labels:
-    app: postgres
+    app: silimate
 spec:
   selector:
     matchLabels:
-      app: postgres
+      app: silimate
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: postgres
+        app: silimate
     spec:
       containers:
-      - image: postgres:latest
+      - image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-db:latest
         name: postgres
-        env:
-        - name: POSTGRES_DB
-          value: silimate
-        - name: POSTGRES_USER
-          value: silimate
-        - name: POSTGRES_PASSWORD
-          value: silimate
+        envFrom:
+          - secretRef:
+              name: silimate-secrets
         ports:
-        - containerPort: 5432
-          name: postgres
+          - containerPort: 5432
+            name: postgres
         volumeMounts:
-        - name: postgres-persistent-storage
-          mountPath: /var/lib/postgresql/data
+          - name: postgres-persistent-storage
+            mountPath: /var/lib/postgresql/
+      imagePullSecrets:
+        - name: aws-ecr-secret
       volumes:
-      - name: postgres-persistent-storage
-        persistentVolumeClaim:
-          claimName: postgres-pv-claim
+        - name: postgres-persistent-storage
+          persistentVolumeClaim:
+            claimName: postgres-pv-claim
