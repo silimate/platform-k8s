@@ -25,7 +25,11 @@ Kubernetes configuration/provisioning for deployments, including Postgres databa
 1. Deploy secrets with `make create-secrets`
 2. Deploy AWS ECR secrets with `make create-ecr-secret`
 3. Deploy the config file with `make create-config`
-4. Deploy PostgreSQL database `make start-db`
+4. (If not using RDS) Deploy PostgreSQL database `make start-db`
 5. Deploy Silimate platform with `make start`
 6. Create worker auth with `make worker-auth`
 7. Expose service to HTTP(S) traffic with `make expose`
+
+## CNAME
+1. Use `make get-endpoint` to get endpoint URL
+2. Go to Google Domains and add it as a CNAME

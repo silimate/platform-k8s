@@ -1,4 +1,4 @@
 aws/aws-auth.yaml
 aws/aws-efs-csi-driver-trust-policy.json
 aws/efs-pvc.yaml
-secrets.yaml
+secrets*.yaml

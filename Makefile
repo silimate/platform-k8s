@@ -32,9 +32,9 @@ worker-auth:
 	kubectl create clusterrolebinding service-reader-pod --clusterrole=service-reader --serviceaccount=default:default
 
 create-secrets:
-	kubectl apply -f secrets.yaml
+	kubectl apply -f config/secrets.$(K8S_CONTEXT)-$(K8S_ENV).yaml
 delete-secrets:
-	kubectl delete -f secrets.yaml
+	kubectl delete -f config/secrets.$(K8S_CONTEXT)-$(K8S_ENV).yaml
 
 create-ecr-secret:
 	kubectl create secret docker-registry aws-ecr-secret \
