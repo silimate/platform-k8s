@@ -3,6 +3,6 @@ kind: ConfigMap
 metadata:
   name: silimate-config
 data:
-  title: "Example User"
-  icon: ""
-  dev: "false"
+  title: "Silimate Demo"
+  icon: "https://github.com/silimate.png"
+  dev: "true"
