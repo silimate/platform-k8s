@@ -3,7 +3,6 @@ kind: ConfigMap
 metadata:
   name: silimate-config
 data:
-  name: "aws"
   title: "Example User"
-  subtitle: "Example Company"
+  icon: ""
   dev: "true"

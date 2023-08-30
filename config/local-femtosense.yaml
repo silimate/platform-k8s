@@ -3,6 +3,6 @@ kind: ConfigMap
 metadata:
   name: silimate-config
 data:
-  title: "Example User"
-  icon: ""
+  title: "Femtosense"
+  icon: "https://github.com/femtosense.png"
   dev: "false"

@@ -4,6 +4,5 @@ metadata:
   name: silimate-config
 data:
   title: "Radical Semiconductor"
-  subtitle: "Silimate Enterprise"
   icon: "https://radicalsemiconductor.com/favicon.ico"
   dev: "false"
