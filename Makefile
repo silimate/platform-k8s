@@ -3,7 +3,7 @@ K8S_CONTEXT := eks
 K8S_ENV := dev
 
 # AWS Configuration
-AWS_ACCOUNT_ID := 596912105783
+AWS_ACCOUNT_ID := $(shell aws sts get-caller-identity --query Account --output text)
 AWS_REGION := us-west-1
 AWS_ECR_REPO := ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 AWS_CLUSTER_NAME := silimate-platform-k8s-${K8S_ENV}
@@ -23,9 +23,11 @@ debug:
 
 # Start/stop k8s services
 aws-auth:
-	export AWS_ACCOUNT_ID=`aws sts get-caller-identity --query Account --output text`; \
+	export AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}; \
 	envsubst < aws/aws-auth.tmpl.yaml > aws/aws-auth.yaml
 	kubectl patch configmap/aws-auth -n kube-system --type merge --patch-file aws/aws-auth.yaml
+
+local: worker-auth create-secrets create-config create-local-pvc start-db start expose
 
 worker-auth:
 	kubectl apply -f worker-auth.yaml
