@@ -1,23 +1,28 @@
-# Shared volume for all pods
+# Shared volume claim for all pods
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: share-claim
 spec:
+  storageClassName: manual
   accessModes:
     - ReadWriteMany
   resources:
     requests:
       storage: 32Gi
 ---
-# Volume for database
+# Shared volume for all pods
 apiVersion: v1
-kind: PersistentVolumeClaim
+kind: PersistentVolume
 metadata:
-  name: postgres-pv-claim
+  name: share-volume
+  labels:
+    type: local
 spec:
+  storageClassName: manual
+  capacity:
+    storage: 32Gi
   accessModes:
     - ReadWriteMany
-  resources:
-    requests:
-      storage: 5Gi
+  hostPath:
+    path: "/mnt/data"
