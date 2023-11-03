@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: share-claim
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 32Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: share-volume
+spec:
+  capacity:
+    storage: 32Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: nfs-server
+    path: /silimate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: host-claim
+spec:
+  accessModes:
+    - ReadOnlyMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 32Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: host-volume
+spec:
+  capacity:
+    storage: 32Gi
+  accessModes:
+    - ReadOnlyMany
+  nfs:
+    server: nfs-server
+    path: /

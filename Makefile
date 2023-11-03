@@ -138,3 +138,12 @@ delete-efs:
 	echo Deleting storage class and PVC!
 	kubectl delete -f aws/efs-pvc.yaml; \
 	echo Deleted storage class and PVC!
+
+create-nfs-pvc:
+	kubectl apply -f nfs-pvc.yaml
+delete-nfs-pvc:
+	kubectl delete -f nfs-pvc.yaml
+start-nfs-server:
+	docker run -d --rm --privileged --name nfs-server -v /:/var/nfs --network=minikube phico/nfs-server:latest
+stop-nfs-server:
+	docker stop nfs-server

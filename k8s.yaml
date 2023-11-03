@@ -33,8 +33,6 @@ spec:
                 name: silimate-config
             - secretRef:
                 name: silimate-secrets
-            - secretRef:
-                name: openai-secrets
           volumeMounts:
             - name: share
               mountPath: /app/share
