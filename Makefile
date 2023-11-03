@@ -45,6 +45,7 @@ create-ecr-secret:
 		--docker-password=`aws ecr get-login-password --region $(AWS_REGION)`
 delete-ecr-secret:
 	kubectl delete secrets aws-ecr-secret
+recreate-ecr-secret: delete-ecr-secret create-ecr-secret
 
 create-config:
 	kubectl apply -f config/$(K8S_CONTEXT)-$(K8S_ENV).yaml
@@ -62,8 +63,6 @@ start:
 	kubectl apply -f k8s.yaml
 stop:
 	kubectl delete -f k8s.yaml
-redeploy:
-	kubectl rollout restart deployment/silimate-platform-k8s-deployment
 
 expose:
 	kubectl apply -f load-balancer.yaml
