@@ -52,6 +52,10 @@ spec:
           volumeMounts:
             - name: share
               mountPath: /app/share
+            - name: host
+              mountPath: /host
+            - name: cad
+              mountPath: /cad
         - name: flow-webserver
           image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-flow:latest
           imagePullPolicy: Always
@@ -68,3 +72,9 @@ spec:
         - name: share
           persistentVolumeClaim:
             claimName: share-claim
+        - name: host
+          persistentVolumeClaim:
+            claimName: host-claim
+        - name: cad
+          persistentVolumeClaim:
+            claimName: cad-claim
