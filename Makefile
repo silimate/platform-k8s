@@ -63,6 +63,8 @@ start:
 	kubectl apply -f k8s.yaml
 stop:
 	kubectl delete -f k8s.yaml
+redeploy:
+	kubectl rollout restart deployment/silimate-platform-k8s-deployment
 
 expose:
 	kubectl apply -f load-balancer.yaml
@@ -138,6 +140,7 @@ delete-efs:
 	kubectl delete -f aws/efs-pvc.yaml; \
 	echo Deleted storage class and PVC!
 
+# NFS
 create-nfs-pvc:
 	kubectl apply -f nfs-pvc.yaml
 delete-nfs-pvc:
@@ -146,3 +149,7 @@ start-nfs-server:
 	docker run -d --rm --privileged --name nfs-server -v /:/var/nfs --network=minikube phico/nfs-server:latest
 stop-nfs-server:
 	docker stop nfs-server
+
+# Minikube
+minikube:
+	minikube start --memory 10000 --cpus=4 --driver=docker --force
