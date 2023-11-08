@@ -27,7 +27,7 @@ aws-auth:
 	envsubst < aws/aws-auth.tmpl.yaml > aws/aws-auth.yaml
 	kubectl patch configmap/aws-auth -n kube-system --type merge --patch-file aws/aws-auth.yaml
 
-local: worker-auth create-secrets create-config create-local-pvc start-db start expose
+local: worker-auth create-secrets create-ecr-secret create-config create-nfs-pvc start expose
 
 worker-auth:
 	kubectl apply -f worker-auth.yaml
@@ -75,11 +75,11 @@ kill-workers:
 	kubectl delete pods -l kubernetes_pod_operator=True
 
 
-# Local PVC
-create-local-pvc:
-	kubectl apply -f local-pvc.yaml
-delete-local-pvc:
-	kubectl delete -f local-pvc.yaml
+# NFS PVC
+create-nfs-pvc:
+	kubectl apply -f nfs-pvc.yaml
+delete-nfs-pvc:
+	kubectl delete -f nfs-pvc.yaml
 
 
 # EKS K8s provisioning
@@ -140,11 +140,7 @@ delete-efs:
 	kubectl delete -f aws/efs-pvc.yaml; \
 	echo Deleted storage class and PVC!
 
-# NFS
-create-nfs-pvc:
-	kubectl apply -f nfs-pvc.yaml
-delete-nfs-pvc:
-	kubectl delete -f nfs-pvc.yaml
+# NFS server
 start-nfs-server:
 	docker run -d --rm --privileged --name nfs-server -v /:/var/nfs --network=minikube phico/nfs-server:latest
 stop-nfs-server:
