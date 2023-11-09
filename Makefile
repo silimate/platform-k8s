@@ -1,6 +1,6 @@
 # Local or EKS (cloud)
-K8S_CONTEXT := eks
-K8S_ENV := dev
+K8S_CONTEXT := local
+K8S_ENV := femtosense
 
 # AWS Configuration
 AWS_ACCOUNT_ID := $(shell aws sts get-caller-identity --query Account --output text)
