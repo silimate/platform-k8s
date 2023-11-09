@@ -149,3 +149,9 @@ stop-nfs-server:
 # Minikube
 minikube:
 	minikube start --memory 10000 --cpus=4 --driver=docker --force
+
+# Database management
+clear-logs:
+	psql -U silimate -h silimate-platform-db-$(K8S-ENV)-cluster.cluster-cbewd3bxi0zy.us-west-1.rds.amazonaws.com -c "DROP TABLE IF EXISTS logs"
+clear-metrics:
+	psql -U silimate -h silimate-platform-db-$(K8S-ENV)-cluster.cluster-cbewd3bxi0zy.us-west-1.rds.amazonaws.com -c "DROP TABLE IF EXISTS metrics"
