@@ -152,6 +152,6 @@ minikube:
 
 # Database management
 clear-logs:
-	psql -U silimate -h silimate-platform-db-$(K8S_ENV)-cluster.cluster-cbewd3bxi0zy.us-west-1.rds.amazonaws.com -c "DROP TABLE IF EXISTS logs"
+	psql -U silimate -h silimate-platform-db-$(K8S_ENV)-cluster.cluster-cbewd3bxi0zy.us-west-1.rds.amazonaws.com -c "DROP TABLE IF EXISTS logs CASCADE"
 clear-metrics:
-	psql -U silimate -h silimate-platform-db-$(K8S_ENV)-cluster.cluster-cbewd3bxi0zy.us-west-1.rds.amazonaws.com -c "DROP TABLE IF EXISTS metrics"
+	psql -U silimate -h silimate-platform-db-$(K8S_ENV)-cluster.cluster-cbewd3bxi0zy.us-west-1.rds.amazonaws.com -c "DROP TABLE IF EXISTS metrics CASCADE"
