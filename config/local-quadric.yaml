@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: silimate-config
+data:
+  title: "Quadric"
+  icon: "https://quadric.io/wp-content/uploads/2022/09/60afe4a8cdf7bb65e90c6a1a_logomark_only_transparent.png"
+  dev: "true"
