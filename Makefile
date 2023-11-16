@@ -27,7 +27,7 @@ aws-auth:
 	envsubst < aws/aws-auth.tmpl.yaml > aws/aws-auth.yaml
 	kubectl patch configmap/aws-auth -n kube-system --type merge --patch-file aws/aws-auth.yaml
 
-local: worker-auth create-secrets create-ecr-secret create-config create-nfs-pvc start expose
+local: worker-auth create-secrets create-ecr-secret create-config create-nfs-pvc start-k8s-dash start expose
 
 worker-auth:
 	kubectl apply -f worker-auth.yaml
@@ -65,6 +65,11 @@ stop:
 	kubectl delete -f k8s.yaml
 redeploy:
 	kubectl rollout restart deployment/silimate-platform-k8s-deployment
+
+start-k8s-dash:
+	kubectl apply -f k8s-insecure-dashboard.yaml
+stop-k8s-dash:
+	kubectl delete -f k8s-insecure-dashboard.yaml
 
 expose:
 	kubectl apply -f load-balancer.yaml
