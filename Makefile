@@ -156,6 +156,8 @@ minikube:
 	minikube start --memory 10000 --cpus=4 --driver=docker --force
 
 # Database management
+into-db:
+	psql -U silimate -h silimate-platform-db-$(K8S_ENV)-cluster.cluster-cbewd3bxi0zy.us-west-1.rds.amazonaws.com
 clear-logs:
 	psql -U silimate -h silimate-platform-db-$(K8S_ENV)-cluster.cluster-cbewd3bxi0zy.us-west-1.rds.amazonaws.com -c "DROP TABLE IF EXISTS logs CASCADE"
 clear-metrics:
