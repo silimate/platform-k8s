@@ -53,6 +53,32 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  name: logs-claim
+spec:
+  accessModes:
+    - ReadOnlyMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 32Gi
+  volumeName: logs-volume
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: logs-volume
+spec:
+  capacity:
+    storage: 32Gi
+  accessModes:
+    - ReadOnlyMany
+  nfs:
+    server: nfs-server
+    path: /silimate/logs
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
   name: cad-claim
 spec:
   accessModes:
