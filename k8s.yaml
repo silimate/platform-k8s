@@ -21,6 +21,12 @@ spec:
             - secretRef:
                 name: silimate-secrets
           args: ["db", "migrate"]
+        - name: chown
+          image: busybox
+          command: ["sh", "-c", "chown -R 50000:50000 /logs"]   
+          volumeMounts:
+          - name: logs
+            mountPath: /logs
       containers:
         - name: frontend
           image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-platform-frontend:latest

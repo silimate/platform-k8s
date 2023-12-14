@@ -74,7 +74,7 @@ spec:
     - ReadOnlyMany
   nfs:
     server: nfs-server
-    path: /silimate/logs
+    path: /var/log/silimate
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
