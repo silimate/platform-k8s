@@ -13,7 +13,7 @@ parameters:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: share-claim
+  name: silimate-claim
 spec:
   volumeMode: Filesystem
   accessModes:

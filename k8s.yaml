@@ -34,7 +34,7 @@ spec:
             - secretRef:
                 name: silimate-secrets
           volumeMounts:
-            - name: share
+            - name: silimate
               mountPath: /silimate
         - name: dashboard
           image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-dashboard:latest
@@ -50,12 +50,12 @@ spec:
                 name: silimate-secrets
           args: ["scheduler"]
           volumeMounts:
-            - name: share
+            - name: silimate
               mountPath: /silimate
             - name: host
               mountPath: /host
-            - name: cad
-              mountPath: /cad
+            - name: pdk
+              mountPath: /pdk
             - name: logs
               mountPath: /app/logs
         - name: flow-webserver
@@ -66,22 +66,22 @@ spec:
                 name: silimate-secrets
           args: ["webserver"]
           volumeMounts:
-            - name: share
+            - name: silimate
               mountPath: /silimate
             - name: logs
               mountPath: /app/logs
       imagePullSecrets:
         - name: aws-ecr-secret
       volumes:
-        - name: share
+        - name: silimate
           persistentVolumeClaim:
-            claimName: share-claim
+            claimName: silimate-claim
         - name: host
           persistentVolumeClaim:
             claimName: host-claim
-        - name: cad
+        - name: pdk
           persistentVolumeClaim:
-            claimName: cad-claim
+            claimName: pdk-claim
         - name: logs
           persistentVolumeClaim:
             claimName: logs-claim
