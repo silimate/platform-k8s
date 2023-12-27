@@ -42,6 +42,8 @@ spec:
           volumeMounts:
             - name: silimate
               mountPath: /silimate
+            - name: host
+              mountPath: /host
         - name: dashboard
           image: 596912105783.dkr.ecr.us-west-1.amazonaws.com/silimate-dashboard:latest
           imagePullPolicy: Always
