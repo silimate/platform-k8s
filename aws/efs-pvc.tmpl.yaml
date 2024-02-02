@@ -23,11 +23,39 @@ spec:
     requests:
       storage: 5Gi # this isn't actually used!
 ---
-# Volume for database
+# Volume for host
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: postgres-pv-claim
+  name: host-claim
+spec:
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc
+  resources:
+    requests:
+      storage: 5Gi # this isn't actually used!
+---
+# Volume for pdk
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pdk-claim
+spec:
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc
+  resources:
+    requests:
+      storage: 5Gi # this isn't actually used!
+---
+# Volume for logs
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: logs-claim
 spec:
   volumeMode: Filesystem
   accessModes:

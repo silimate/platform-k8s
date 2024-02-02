@@ -152,8 +152,10 @@ stop-nfs-server:
 	docker stop nfs-server
 
 # Minikube
-minikube:
-	minikube start --memory 10000 --cpus=4 --driver=docker --force
+start-minikube:
+	sudo minikube start --memory=max --cpus=max --driver=docker --force
+stop-minikube:
+	sudo minikube stop
 
 # Database management
 into-db:
