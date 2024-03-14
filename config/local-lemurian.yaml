@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: silimate-config
-data:
-  title: "Lemurian Labs"
-  icon: "https://media.licdn.com/dms/image/C4D0BAQH5sg9WVVTwPg/company-logo_200_200/0/1630552056750?e=1707350400&v=beta&t=k_nnRZR02CQkZ_7VuNZFe3oFhDZo8BYRt1UvwKLL5Nc"
-  dev: "true"

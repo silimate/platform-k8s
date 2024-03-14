@@ -63,7 +63,7 @@ start:
 	kubectl apply -f k8s.yaml
 stop:
 	kubectl delete -f k8s.yaml
-redeploy:
+redeploy: recreate-ecr-secret
 	kubectl rollout restart deployment/silimate-platform-k8s-deployment
 
 start-k8s-dash:
